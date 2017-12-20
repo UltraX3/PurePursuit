@@ -13,7 +13,7 @@ public class PurePursuitMovementStrategy implements TankMovementStrategy{
 
     int lastPath = 0;
 
-    Function<Double,Vector> esimatePositionFromRotation;
+    private Function<Double,Vector> esimatePositionFromRotation;
     private double estimatedTime;
     private Function<Double, Vector> timeToPosition;
     private float rotatedAngle;
@@ -70,7 +70,7 @@ public class PurePursuitMovementStrategy implements TankMovementStrategy{
 
     private Vector getWheelTangentialVelocity(){
         double curvature = curvatureToGoal();
-        double c = 2/(tankRobot.getLateralWheelDistance()*curvature); //TODO: !!! this should be 2/(lateralWheelDistance*curvature), but this doesn't return consistent answers
+        double c = 2/(tankRobot.getLateralWheelDistance()*curvature);
         double velLeftToRightRatio = -( c + 1 ) / (1-c);
         double velRightToLeftRatio = 1/velLeftToRightRatio;
         double score = -Integer.MAX_VALUE;
@@ -117,17 +117,18 @@ public class PurePursuitMovementStrategy implements TankMovementStrategy{
         rotVelocity = (bestVector.get(1) - bestVector.get(0)) / tankRobot.getLateralWheelDistance();
 
         // Note this can be negative
+
         r = 1 / curvature;
 
         final double currentAngle = tankRobot.getAngle();
         double thetaToRotate = MathUtils.Arithmetic.sign(rotVelocity)*Math.atan(goalPoint.get(1) / (Math.abs(r)-goalPoint.get(0)));
 
         Function<Double,Vector> estimatePositionFromDTheta = dTheta -> {
-            double dxRelative = -Math.abs(r)*Math.cos(-dTheta) + Math.abs(r);
+            double dxRelative = Math.abs(r)*(1-Math.cos(-dTheta));
             double dyRelative = Math.abs(r)*Math.sin(-dTheta);
-
-            Vector dPosAbsolute = MathUtils.LinearAlgebra.rotate2D(new Vector(dxRelative,dyRelative),-rotatedAngle);
-            Vector toReturn = usedEstimatedLocation.clone().add(dPosAbsolute);
+            Vector dRelativeVector = new Vector(dxRelative, dyRelative);
+            Vector rotated = MathUtils.LinearAlgebra.rotate2D(dRelativeVector, -dTheta);
+            Vector toReturn = rotated.add(usedEstimatedLocation);
             return toReturn;
         };
 

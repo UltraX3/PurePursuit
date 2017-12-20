@@ -2,7 +2,7 @@ package com.github.ultrax3.purepursuit;
 
 public class MathUtils {
     public static class LinearAlgebra{
-        public static Vector rotate2D(Vector vector, float theta){
+        public static Vector rotate2D(Vector vector, double theta){
             return new Vector(
                     vector.x[0] * Math.cos(theta) - vector.x[1] * Math.sin(theta),
                     vector.x[0] * Math.sin(theta) + vector.x[1] * Math.cos(theta));
