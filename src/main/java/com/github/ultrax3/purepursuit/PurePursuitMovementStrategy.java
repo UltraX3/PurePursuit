@@ -77,7 +77,7 @@ public class PurePursuitMovementStrategy implements TankMovementStrategy{
         goalPoint = absoluteToRelativeCoord(closest);
         goalPointAbsolute = closest;
 
-        // Vector wheelTangentialVelocity = getWheelTangentialVelocity();
+        Vector wheelTangentialVelocity = getWheelTangentialVelocity();
     }
 
     int closest(Vector origin, List<Vector> vectors){
