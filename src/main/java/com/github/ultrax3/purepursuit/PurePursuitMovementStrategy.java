@@ -1,7 +1,6 @@
 package com.github.ultrax3.purepursuit;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class PurePursuitMovementStrategy implements TankMovementStrategy{
@@ -11,7 +10,6 @@ public class PurePursuitMovementStrategy implements TankMovementStrategy{
     private final TankRobot tankRobot;
     private double r;
     private double rotVelocity;
-    private final static double EPSILON = 0.5;
     private double lookAheadDistance;
     double currentAngle;
 
@@ -24,8 +22,6 @@ public class PurePursuitMovementStrategy implements TankMovementStrategy{
     private double rotatedAngle;
     private Vector usedEstimatedLocation;
     private Vector goalPointAbsolute;
-
-    private static final double DISTANCE_THRESHOLD_SQUARED = 0.1*0.1;
 
     public PurePursuitMovementStrategy(TankRobot tankRobot, List<Vector> goals, double lookAheadDistance){
         this.pathPoints = goals;
@@ -45,11 +41,6 @@ public class PurePursuitMovementStrategy implements TankMovementStrategy{
         return esimatePositionFromRotation;
     }
 
-    @Override
-    public void start() {
-
-    }
-
     int counter = 0;
 
     List<Vector> intersections;
@@ -66,9 +57,6 @@ public class PurePursuitMovementStrategy implements TankMovementStrategy{
             Vector lineP1 = pathPoints.get(i);
             Vector lineP2 = pathPoints.get(i + 1);
             double toLookAhead = lookAheadDistance;
-//            if(i == lastPath+1){
-//                toLookAhead = lookAheadDistance+EPSILON;
-//            }
             List<Vector> vectorList = new ArrayList<>(MathUtils.Geometry.
                     getCircleLineIntersectionPoint(lineP1, lineP2, usedEstimatedLocation, toLookAhead));
             vectorList.removeIf(vector -> !vector.between(lineP1,lineP2));
@@ -89,9 +77,7 @@ public class PurePursuitMovementStrategy implements TankMovementStrategy{
         goalPoint = absoluteToRelativeCoord(closest);
         goalPointAbsolute = closest;
 
-        Vector wheelTangentialVelocity = getWheelTangentialVelocity();
-        tankRobot.setLeftTreadVelocity(wheelTangentialVelocity.get(0));
-        tankRobot.setRightTreadVelocity(wheelTangentialVelocity.get(1));
+        // Vector wheelTangentialVelocity = getWheelTangentialVelocity();
     }
 
     int closest(Vector origin, List<Vector> vectors){
