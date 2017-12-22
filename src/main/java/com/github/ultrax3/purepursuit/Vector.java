@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 public class Vector {
 
-    final double[] x;
+    private final double[] x;
 
     public Vector(double... x){
         this.x = x;

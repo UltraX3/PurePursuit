@@ -1,5 +1,7 @@
 package com.github.ultrax3.purepursuit;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class PurePursuitMovementStrategy implements TankMovementStrategy{
@@ -9,20 +11,30 @@ public class PurePursuitMovementStrategy implements TankMovementStrategy{
     private final TankRobot tankRobot;
     private double r;
     private double rotVelocity;
+    private final static double EPSILON = 0.5;
     private double lookAheadDistance;
+    double currentAngle;
 
     int lastPath = 0;
 
     private Function<Double,Vector> esimatePositionFromRotation;
     private double estimatedTime;
     private Function<Double, Vector> timeToPosition;
-    private float rotatedAngle;
+    private Function<Double,Double> estimateHeadingFromTime;
+    private double rotatedAngle;
     private Vector usedEstimatedLocation;
+    private Vector goalPointAbsolute;
+
+    private static final double DISTANCE_THRESHOLD_SQUARED = 0.1*0.1;
 
     public PurePursuitMovementStrategy(TankRobot tankRobot, List<Vector> goals, double lookAheadDistance){
         this.pathPoints = goals;
         this.tankRobot = tankRobot;
         this.lookAheadDistance = lookAheadDistance;
+    }
+
+    public Function<Double, Double> getEstimateHeadingFromTime() {
+        return estimateHeadingFromTime;
     }
 
     public Function<Double, Vector> estimateTimeToPosition() {
@@ -38,29 +50,75 @@ public class PurePursuitMovementStrategy implements TankMovementStrategy{
 
     }
 
+    int counter = 0;
+
+    List<Vector> intersections;
     public void update() {
-        for(int i =lastPath; i< pathPoints.size()-1; i++){
-            usedEstimatedLocation = tankRobot.getEsimatedLocation();
-            Vector[] vectors = MathUtils.Geometry.circleLineIntersect(pathPoints.get(i), pathPoints.get(i + 1), usedEstimatedLocation, lookAheadDistance);
-            if(vectors.length != 0){
-                lastPath = i;
-                if(vectors.length == 2) {
-                    if (vectors[0].clone().subtractBy(pathPoints.get(i + 1)).getMagnitudeSquared() <
-                            vectors[1].clone().subtractBy(pathPoints.get(i + 1)).getMagnitudeSquared()) {
-                        goalPoint = absoluteToRelativeCoord(vectors[0]);
-                    } else {
-                        goalPoint = absoluteToRelativeCoord(vectors[1]);
-                    }
-                }
-                else{
-                    goalPoint = absoluteToRelativeCoord(vectors[0]);
-                }
-                break;
-            }
+
+        intersections = new ArrayList<>();
+        int nextPathI = Integer.MAX_VALUE;
+        usedEstimatedLocation = tankRobot.getEsimatedLocation();
+        floop:
+        for(int i =lastPath; i<= lastPath+1; i++){
+            if(i+1 >= pathPoints.size())
+                continue floop;
+            counter++;
+            Vector lineP1 = pathPoints.get(i);
+            Vector lineP2 = pathPoints.get(i + 1);
+            double toLookAhead = lookAheadDistance;
+//            if(i == lastPath+1){
+//                toLookAhead = lookAheadDistance+EPSILON;
+//            }
+            List<Vector> vectorList = new ArrayList<>(MathUtils.Geometry.
+                    getCircleLineIntersectionPoint(lineP1, lineP2, usedEstimatedLocation, toLookAhead));
+            vectorList.removeIf(vector -> !vector.between(lineP1,lineP2));
+            if(i == lastPath+1 && !vectorList.isEmpty())
+                nextPathI = intersections.size();
+            intersections.addAll(vectorList);
         }
+
+        Vector toCompare = goalPointAbsolute;
+        if(toCompare == null){
+            toCompare = pathPoints.get(1);
+        }
+        int closestVectorI = closest(toCompare,intersections);
+        Vector closest = intersections.get(closestVectorI);
+        if(closestVectorI >= nextPathI){
+            lastPath++;
+        }
+        goalPoint = absoluteToRelativeCoord(closest);
+        goalPointAbsolute = closest;
+
         Vector wheelTangentialVelocity = getWheelTangentialVelocity();
         tankRobot.setLeftTreadVelocity(wheelTangentialVelocity.get(0));
         tankRobot.setRightTreadVelocity(wheelTangentialVelocity.get(1));
+    }
+
+    int closest(Vector origin, List<Vector> vectors){
+        double minMagSquared = Double.MAX_VALUE;
+        int minVectorI = 0;
+        for(int i = 0; i < vectors.size(); i++){
+            Vector vector = vectors.get(i);
+            double magnitudeSquared = origin.subtractBy(vector).getMagnitudeSquared();
+            if(magnitudeSquared < minMagSquared){
+                minMagSquared = magnitudeSquared;
+                minVectorI = i;
+            }
+        }
+        return minVectorI;
+    }
+
+    /**
+     * To see if goal points are continuous
+     * @param thresholdDistanceSquared
+     * @return
+     */
+    boolean isValidGoalPoint(Vector goalPoint){
+        if(this.goalPoint == null)
+            return true;
+        if(this.goalPoint.get(1) < 0)
+            return false;
+        return true;
     }
 
     private double curvatureToGoal(){
@@ -120,16 +178,21 @@ public class PurePursuitMovementStrategy implements TankMovementStrategy{
 
         r = 1 / curvature;
 
-        final double currentAngle = tankRobot.getAngle();
+        currentAngle = tankRobot.getAngle();
         double thetaToRotate = MathUtils.Arithmetic.sign(rotVelocity)*Math.atan(goalPoint.get(1) / (Math.abs(r)-goalPoint.get(0)));
 
         Function<Double,Vector> estimatePositionFromDTheta = dTheta -> {
-            double dxRelative = Math.abs(r)*(1-Math.cos(-dTheta));
-            double dyRelative = Math.abs(r)*Math.sin(-dTheta);
+            double dxRelative = -r*(1-Math.cos(-dTheta));
+            double dyRelative = -r*Math.sin(-dTheta);
             Vector dRelativeVector = new Vector(dxRelative, dyRelative);
-            Vector rotated = MathUtils.LinearAlgebra.rotate2D(dRelativeVector, -dTheta);
+            Vector rotated = MathUtils.LinearAlgebra.rotate2D(dRelativeVector, currentAngle);
             Vector toReturn = rotated.add(usedEstimatedLocation);
             return toReturn;
+        };
+
+        estimateHeadingFromTime = time-> {
+            double heading = currentAngle + rotVelocity*time;
+            return heading;
         };
 
         esimatePositionFromRotation = angle -> {
@@ -137,8 +200,6 @@ public class PurePursuitMovementStrategy implements TankMovementStrategy{
             return estimatePositionFromDTheta.test(dTheta);
         };
 
-        // tangentialSpeed = Math.abs(r*rotVelocity);
-        // arclength = distanceRotated *r;
         estimatedTime = thetaToRotate / rotVelocity;
 
         timeToPosition = time -> {
@@ -154,7 +215,11 @@ public class PurePursuitMovementStrategy implements TankMovementStrategy{
             throw new IllegalArgumentException("Must be in R2");
         Vector coordDif = waypoint.clone().subtractBy(tankRobot.getEsimatedLocation());
         rotatedAngle = tankRobot.getAngle();
-        return MathUtils.LinearAlgebra.rotate2D(coordDif, rotatedAngle);
+        Vector toReturn = MathUtils.LinearAlgebra.rotate2D(coordDif, -rotatedAngle);
+        return toReturn;
     }
 
+    public Vector getGoalPointAbsolute() {
+        return goalPointAbsolute;
+    }
 }

@@ -63,15 +63,46 @@ public class PurePursuitTest extends PApplet{
     public void draw() {
         tankRobot.update();
         background(255,255,255);
+        fill(0,0,0);
         for(Vector vector : goals){
-            stroke(219, 40, 37);
-            drawDot(vector.get(0),vector.get(1));
+            stroke(0, 0, 255);
+            ellipse(getX(vector.get(0)),getY(vector.get(1)),2,2);
         }
+
+        TankMovementStrategy movementStrategy = tankRobot.getMovementStrategy();
         stroke(0, 0, 0);
-        super.ellipse((float) (10*tankRobot.getEsimatedLocation().get(0))+200,(float) (10*tankRobot.getEsimatedLocation().get(1))+200,10,10);
+        float drawX = (float) (10 * tankRobot.getEsimatedLocation().get(0)) + 200;
+        float drawY = (float) (10 * tankRobot.getEsimatedLocation().get(1)) + 200;
+        Vector lineAddPoint = MathUtils.LinearAlgebra.rotate2D(new Vector(0, 30), tankRobot.getAngle());
+        super.ellipse(drawX, 400-drawY,10,10);
+        super.line(drawX, 400-drawY,(float)(drawX+lineAddPoint.get(0)),400-(float)(drawY+lineAddPoint.get(1)));
+        stroke(0,255,0);
+        noFill();
+        super.ellipse(drawX, 400-drawY,20,20);
+        if (movementStrategy instanceof PurePursuitMovementStrategy){
+            fill(0,0,0);
+            stroke(255, 0, 0);
+            PurePursuitMovementStrategy purePursuitMovementStrategy = (PurePursuitMovementStrategy) movementStrategy;
+            Vector goalPoint = purePursuitMovementStrategy.getGoalPointAbsolute();
+            ellipse(getX(goalPoint.get(0)),getY(goalPoint.get(1)),5,5);
+            for (Vector intersection : purePursuitMovementStrategy.intersections) {
+                stroke(0, 0, 0);
+                noFill();
+                ellipse(getX(intersection.get(0)),getY(intersection.get(1)),5,5);
+            }
+        }
     }
 
-    void drawDot(double x, double y){
-        super.ellipse((float) (10*x)+200,(float) (10*y)+200,2,2);
+    float getX(double x){
+        return (float) (10 * x) + 200;
     }
+
+    float getY(double y){
+        return (float) 400 - ((float) (10 * y) + 200);
+    }
+
+    //void drawDot(double x, double y){
+    //
+    //    super.ellipse(xCoord, yCoord,2,2);
+    //}
 }

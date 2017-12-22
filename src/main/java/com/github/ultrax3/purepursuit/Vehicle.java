@@ -2,6 +2,9 @@ package com.github.ultrax3.purepursuit;
 
 import java.util.*;
 
+/**
+ * @deprecated
+ */
 public class Vehicle {
 
     private final double lateralWheelDistance;

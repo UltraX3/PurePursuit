@@ -1,11 +1,15 @@
 package com.github.ultrax3.purepursuit;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 public class MathUtils {
     public static class LinearAlgebra{
         public static Vector rotate2D(Vector vector, double theta){
             return new Vector(
-                    vector.x[0] * Math.cos(theta) - vector.x[1] * Math.sin(theta),
-                    vector.x[0] * Math.sin(theta) + vector.x[1] * Math.cos(theta));
+                    vector.get(0) * Math.cos(theta) - vector.get(1) * Math.sin(theta),
+                    vector.get(0) * Math.sin(theta) + vector.get(1) * Math.cos(theta));
         }
     }
     public static class Algebra {
@@ -37,6 +41,40 @@ public class MathUtils {
     }
 
     public static class Geometry{
+
+        public static List<Vector> getCircleLineIntersectionPoint(Vector pointA,
+                                                    Vector pointB, Vector center, double radius) {
+            double baX = pointB.get(0) - pointA.get(0);
+            double baY = pointB.get(1) - pointA.get(1);
+            double caX = center.get(0) - pointA.get(0);
+            double caY = center.get(1) - pointA.get(1);
+
+            double a = baX * baX + baY * baY;
+            double bBy2 = baX * caX + baY * caY;
+            double c = caX * caX + caY * caY - radius * radius;
+
+            double pBy2 = bBy2 / a;
+            double q = c / a;
+
+            double disc = pBy2 * pBy2 - q;
+            if (disc < 0) {
+                return Collections.emptyList();
+            }
+            // if disc == 0 ... dealt with later
+            double tmpSqrt = Math.sqrt(disc);
+            double abScalingFactor1 = -pBy2 + tmpSqrt;
+            double abScalingFactor2 = -pBy2 - tmpSqrt;
+
+            Vector p1 = new Vector(pointA.get(0) - baX * abScalingFactor1, pointA.get(1)
+                    - baY * abScalingFactor1);
+            if (disc == 0) { // abScalingFactor1 == abScalingFactor2
+                return Collections.singletonList(p1);
+            }
+            Vector p2 = new Vector(pointA.get(0) - baX * abScalingFactor2, pointA.get(1)
+                    - baY * abScalingFactor2);
+            return Arrays.asList(p1, p2);
+        }
+
         public static Vector[] circleLineIntersect(Vector lineP1, Vector lineP2, Vector circleCenter, double circleRadius){
 
             // Circle-line intersection
@@ -63,8 +101,8 @@ public class MathUtils {
             double pm = Math.sqrt(inRoot);
             double intersectT1 = (t+pm)/denominator;
             double intersectT2 = (t-pm)/denominator;
-            Vector intersect1 = new Vector(intersectT1 * f, intersectT1 * g);
-            Vector intersect2 = new Vector(intersectT2 * f, intersectT2 * g);
+            Vector intersect1 = new Vector(intersectT1 * f+x_0, intersectT1 * g+y_0);
+            Vector intersect2 = new Vector(intersectT2 * f+x_0, intersectT2 * g+y_0);
             if(intersect1.between(lineP1,lineP2)){
                 if(intersect2.between(lineP1,lineP2)){
                     return new Vector[]{

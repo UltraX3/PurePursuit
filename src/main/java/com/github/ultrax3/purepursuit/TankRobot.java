@@ -5,7 +5,7 @@ public class TankRobot implements TankMoveable{
     private final double lateralWheelDistance;
     private final double v_rMax,v_lMax,v_lMin, v_rMin;
     private Vector estimatedLocation;
-    private final float angle;
+    private double angle;
     private TankMovementStrategy movementStrategy;
     private long lastUpdateNano = -1;
 
@@ -25,7 +25,7 @@ public class TankRobot implements TankMoveable{
         return estimatedLocation;
     }
 
-    public float getAngle() {
+    public double getAngle() {
         return angle;
     }
 
@@ -54,11 +54,16 @@ public class TankRobot implements TankMoveable{
         if(lastUpdateNano != -1 && movementStrategy instanceof PurePursuitMovementStrategy){
             PurePursuitMovementStrategy purePursuitMovementStrategy = (PurePursuitMovementStrategy) this.movementStrategy;
             estimatedLocation = purePursuitMovementStrategy.estimateTimeToPosition().test(0.05);
+            angle = purePursuitMovementStrategy.getEstimateHeadingFromTime().test(0.05);
             //estimatedLocation = purePursuitMovementStrategy.estimateTimeToPosition().test((newNano-lastUpdateNano)/1000000000.0);
         }
         movementStrategy.update();
         lastUpdateNano = 1;
         //lastUpdateNano = newNano;
+    }
+
+    public TankMovementStrategy getMovementStrategy() {
+        return movementStrategy;
     }
 
     public double getLateralWheelDistance() {
