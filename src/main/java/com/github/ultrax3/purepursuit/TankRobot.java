@@ -1,6 +1,6 @@
 package com.github.ultrax3.purepursuit;
 
-public class TankRobot implements TankMoveable{
+public class TankRobot {
 
     private final double lateralWheelDistance;
     private final double v_rMax,v_lMax,v_lMin, v_rMin;
@@ -68,15 +68,5 @@ public class TankRobot implements TankMoveable{
 
     public double getLateralWheelDistance() {
         return lateralWheelDistance;
-    }
-
-    @Override
-    public void setLeftTreadVelocity(double velocity) {
-
-    }
-
-    @Override
-    public void setRightTreadVelocity(double velocity) {
-
     }
 }
