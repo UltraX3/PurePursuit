@@ -11,6 +11,7 @@ public class PurePursuitMovementStrategy implements TankMovementStrategy{
     private double r;
     private double rotVelocity;
     private double lookAheadDistance;
+    private boolean finishedPath = false;
     double currentAngle;
 
     int lastPath = 0;
@@ -45,6 +46,8 @@ public class PurePursuitMovementStrategy implements TankMovementStrategy{
 
     List<Vector> intersections;
     public void update() {
+        if(finishedPath)
+            return;
 
         intersections = new ArrayList<>();
         int nextPathI = Integer.MAX_VALUE;
@@ -70,6 +73,10 @@ public class PurePursuitMovementStrategy implements TankMovementStrategy{
             toCompare = pathPoints.get(1);
         }
         int closestVectorI = closest(toCompare,intersections);
+        if(closestVectorI == -1){
+            finishedPath = true;
+            return;
+        }
         Vector closest = intersections.get(closestVectorI);
         if(closestVectorI >= nextPathI){
             lastPath++;
@@ -82,7 +89,7 @@ public class PurePursuitMovementStrategy implements TankMovementStrategy{
 
     int closest(Vector origin, List<Vector> vectors){
         double minMagSquared = Double.MAX_VALUE;
-        int minVectorI = 0;
+        int minVectorI = -1;
         for(int i = 0; i < vectors.size(); i++){
             Vector vector = vectors.get(i);
             double magnitudeSquared = origin.subtractBy(vector).getMagnitudeSquared();
