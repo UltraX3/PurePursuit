@@ -87,6 +87,10 @@ public class PurePursuitMovementStrategy implements TankMovementStrategy{
         Vector wheelTangentialVelocity = getWheelTangentialVelocity();
     }
 
+    public double getLookAheadDistance() {
+        return lookAheadDistance;
+    }
+
     int closest(Vector origin, List<Vector> vectors){
         double minMagSquared = Double.MAX_VALUE;
         int minVectorI = -1;
@@ -103,7 +107,7 @@ public class PurePursuitMovementStrategy implements TankMovementStrategy{
 
     /**
      * To see if goal points are continuous
-     * @param thresholdDistanceSquared
+     * @param 
      * @return
      */
     boolean isValidGoalPoint(Vector goalPoint){
