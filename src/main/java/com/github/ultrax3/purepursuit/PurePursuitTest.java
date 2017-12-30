@@ -61,7 +61,7 @@ public class PurePursuitTest extends PApplet{
     public void setup(){
         settings();
         fill(0,0,0);
-        frameRate(60);
+        frameRate(5);
         PurePursuitMovementStrategy movementStrategy = new PurePursuitMovementStrategy(tankRobot, goals,1);
         tankRobot.setMovementStrategy(movementStrategy);
     }

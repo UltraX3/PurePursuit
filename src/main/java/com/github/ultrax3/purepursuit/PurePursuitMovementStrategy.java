@@ -124,7 +124,7 @@ public class PurePursuitMovementStrategy implements TankMovementStrategy{
     }
 
     public Vector getCircleCenter(){
-        Vector circleRelativeCenter = new Vector(r,0);
+        Vector circleRelativeCenter = new Vector(-r,0);
         Vector circleRelativeCenterRotated = MathUtils.LinearAlgebra.rotate2D(circleRelativeCenter, currentAngle);
         return usedEstimatedLocation.add(circleRelativeCenterRotated);
     }
