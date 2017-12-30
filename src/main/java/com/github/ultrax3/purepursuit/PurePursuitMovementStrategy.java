@@ -123,6 +123,16 @@ public class PurePursuitMovementStrategy implements TankMovementStrategy{
         return -2*goalPoint.get(0)/lSquared;
     }
 
+    public Vector getCircleCenter(){
+        Vector circleRelativeCenter = new Vector(r,0);
+        Vector circleRelativeCenterRotated = MathUtils.LinearAlgebra.rotate2D(circleRelativeCenter, currentAngle);
+        return usedEstimatedLocation.add(circleRelativeCenterRotated);
+    }
+
+    public double getR() {
+        return r;
+    }
+
     private Vector getWheelTangentialVelocity(){
         double curvature = curvatureToGoal();
         double c = 2/(tankRobot.getLateralWheelDistance()*curvature);

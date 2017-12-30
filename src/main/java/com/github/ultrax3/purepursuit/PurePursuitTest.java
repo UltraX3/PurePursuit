@@ -17,7 +17,14 @@ public class PurePursuitTest extends PApplet{
     - Explanation of circle-line intersection: http://mathworld.wolfram.com/Circle-LineIntersection.html
     - PurePursuit example video: https://www.youtube.com/watch?v=qG70QJJ8Qz8
     - MIT PurPursuit example video https://www.youtube.com/watch?v=9fzzp6oxid4
-    -
+    - https://en.wikipedia.org/wiki/Transformation_matrix#Affine_transformations
+    - https://en.wikipedia.org/wiki/Homogeneous_coordinates
+    - http://www.songho.ca/math/homogeneous/homogeneous.html
+    - Projective geometry
+      - http://robotics.stanford.edu/~birch/projective/node1.html
+      - http://robotics.stanford.edu/~birch/projective/node4.html
+    - https://www2.cs.duke.edu/courses/fall15/compsci527/notes/homogeneous-coordinates.pdf
+
 
     Explanation for some equations:
     https://www.sharelatex.com/read/khftjrmkfzqy
@@ -87,7 +94,22 @@ public class PurePursuitTest extends PApplet{
             PurePursuitMovementStrategy purePursuitMovementStrategy = (PurePursuitMovementStrategy) movementStrategy;
             stroke(0,255,0);
             noFill();
+
+            // Circle which collides with lines to find goal point
             super.ellipse(drawX, 400-drawY, (float) (purePursuitMovementStrategy.getLookAheadDistance()*20),(float) (purePursuitMovementStrategy.getLookAheadDistance()*20));
+
+            stroke(255,0,0);
+            Vector circleCenter = purePursuitMovementStrategy.getCircleCenter();
+            double circleRadius = purePursuitMovementStrategy.getR();
+            if(Math.abs(circleRadius) > 1000){
+                Vector fakeCircleLine = MathUtils.LinearAlgebra.rotate2D(new Vector(0, 500), tankRobot.getAngle());
+                // super.ellipse(drawX, 400-drawY,10,10);
+                stroke(255,255,0);
+                super.line((float)(drawX-fakeCircleLine.get(0)),400-(float)(drawY-fakeCircleLine.get(1)),(float)(drawX+fakeCircleLine.get(0)),400-(float)(drawY+fakeCircleLine.get(1)));
+            }
+            else {
+                super.ellipse(getX(circleCenter.get(0)), getY(circleCenter.get(1)), (float) (circleRadius * 20), (float) (circleRadius * 20));
+            }
             fill(0,0,0);
             stroke(255, 0, 0);
             Vector goalPoint = purePursuitMovementStrategy.getGoalPointAbsolute();
@@ -108,8 +130,4 @@ public class PurePursuitTest extends PApplet{
         return (float) 400 - ((float) (10 * y) + 200);
     }
 
-    //void drawDot(double x, double y){
-    //
-    //    super.ellipse(xCoord, yCoord,2,2);
-    //}
 }
