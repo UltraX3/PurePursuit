@@ -23,6 +23,10 @@ public class PurePursuitMovementStrategy implements TankMovementStrategy{
     private double rotatedAngle;
     private Vector usedEstimatedLocation;
     private Vector goalPointAbsolute;
+    private Vector wheelVelocities;
+    private double tangentialSpeed;
+    private double leftWheelTanVel;
+    private double rightWheelTanVel;
 
     public PurePursuitMovementStrategy(TankRobot tankRobot, List<Vector> goals, double lookAheadDistance){
         this.pathPoints = goals;
@@ -42,10 +46,13 @@ public class PurePursuitMovementStrategy implements TankMovementStrategy{
         return esimatePositionFromRotation;
     }
 
+
+
     int counter = 0;
 
     List<Vector> intersections;
     public void update() {
+        ArrayList<Vector> test;
         if(finishedPath)
             return;
 
@@ -84,8 +91,12 @@ public class PurePursuitMovementStrategy implements TankMovementStrategy{
         goalPoint = absoluteToRelativeCoord(closest);
         goalPointAbsolute = closest;
 
-        Vector wheelTangentialVelocity = getWheelTangentialVelocity();
+        wheelVelocities = calculateWheelVelocities();
     }
+
+
+
+
 
     public double getLookAheadDistance() {
         return lookAheadDistance;
@@ -129,11 +140,19 @@ public class PurePursuitMovementStrategy implements TankMovementStrategy{
         return usedEstimatedLocation.add(circleRelativeCenterRotated);
     }
 
+    /**
+     *
+     * @return The radius of the circle that the robot is traveling across. Positive if the robot is turning left, negative if right.
+     */
     public double getR() {
         return r;
     }
 
-    private Vector getWheelTangentialVelocity(){
+    public Vector getWheelVelocities() {
+        return wheelVelocities;
+    }
+
+    private Vector calculateWheelVelocities(){
         double curvature = curvatureToGoal();
         double c = 2/(tankRobot.getLateralWheelDistance()*curvature);
         double velLeftToRightRatio = -( c + 1 ) / (1-c);
@@ -180,11 +199,13 @@ public class PurePursuitMovementStrategy implements TankMovementStrategy{
         }
 
         rotVelocity = (bestVector.get(1) - bestVector.get(0)) / tankRobot.getLateralWheelDistance();
-
         // Note this can be negative
 
         r = 1 / curvature;
 
+        leftWheelTanVel = Math.abs((r - tankRobot.getLateralWheelDistance() / 2)*rotVelocity);
+        rightWheelTanVel = Math.abs((r + tankRobot.getLateralWheelDistance() / 2)*rotVelocity);
+        tangentialSpeed = Math.abs(r * rotVelocity);
         currentAngle = tankRobot.getAngle();
         double thetaToRotate = MathUtils.Arithmetic.sign(rotVelocity)*Math.atan(goalPoint.get(1) / (Math.abs(r)-goalPoint.get(0)));
 
@@ -215,6 +236,18 @@ public class PurePursuitMovementStrategy implements TankMovementStrategy{
         };
 
         return bestVector;
+    }
+
+    public double getTangentialSpeed() {
+        return tangentialSpeed;
+    }
+
+    public double getLeftWheelTanVel() {
+        return leftWheelTanVel;
+    }
+
+    public double getRightWheelTanVel() {
+        return rightWheelTanVel;
     }
 
     private Vector absoluteToRelativeCoord(Vector waypoint){

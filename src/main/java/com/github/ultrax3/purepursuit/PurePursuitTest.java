@@ -3,9 +3,7 @@ package com.github.ultrax3.purepursuit;
 import processing.core.PApplet;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Random;
 
 public class PurePursuitTest extends PApplet{
 
@@ -16,15 +14,30 @@ public class PurePursuitTest extends PApplet{
     - Explanation of PurePursuit: https://www.mathworks.com/help/robotics/ug/pure-pursuit-controller.html
     - Explanation of circle-line intersection: http://mathworld.wolfram.com/Circle-LineIntersection.html
     - PurePursuit example video: https://www.youtube.com/watch?v=qG70QJJ8Qz8
-    - MIT PurPursuit example video https://www.youtube.com/watch?v=9fzzp6oxid4
+    - MIT PurePursuit example video (variable velocity as well) https://www.youtube.com/watch?v=9fzzp6oxid4
     - https://en.wikipedia.org/wiki/Transformation_matrix#Affine_transformations
     - https://en.wikipedia.org/wiki/Homogeneous_coordinates
-    - http://www.songho.ca/math/homogeneous/homogeneous.html
     - Projective geometry
+      - http://www.songho.ca/math/homogeneous/homogeneous.html
       - http://robotics.stanford.edu/~birch/projective/node1.html
       - http://robotics.stanford.edu/~birch/projective/node4.html
-    - https://www2.cs.duke.edu/courses/fall15/compsci527/notes/homogeneous-coordinates.pdf
-
+      - https://www2.cs.duke.edu/courses/fall15/compsci527/notes/homogeneous-coordinates.pdf
+    - PurePursuit demo video https://www.youtube.com/watch?v=EwyzT2SCLbA
+    - https://www.mathworks.com/help/robotics/ug/vector-field-histograms.html
+    - Obstacle avoidance
+      - Vector Field Histogram & Bug https://www.youtube.com/watch?v=O2EIc7wrfgQ
+      - Vector Field Histogram demo: https://www.youtube.com/watch?v=caRj3OLA10Q
+      - VFH paper http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.7.7566&rep=rep1&type=pdf
+      - VFF and VFH http://www-personal.umich.edu/~johannb/vff&vfh.htm
+      - VHF+ http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.438.3464&rep=rep1&type=pdf
+      - VFH* (combines A* algorithm ... long & uses MATLAB) http://scholar.sun.ac.za/bitstream/handle/10019.1/100319/vanbreda_vector_2016.pdf?sequence=1
+      - Another paper on VFH* http://www.ipcsit.com/vol47/012-ICCTS2012-T059.pdf
+      - VFH* (imo the best) https://www.cs.cmu.edu/~iwan/papers/vfhstar.pdf
+     - Trajectory planning https://www.dis.uniroma1.it/~deluca/rob1_en/13_TrajectoryPlanningJoints.pdf
+     - REALLY GOOD Paper on autonomous vehichles (looks good so far but long) https://www.ri.cmu.edu/pub_files/2009/2/Automatic_Steering_Methods_for_Autonomous_Automobile_Path_Tracking.pdf
+     - Optimal velocity (mind = blown) http://www.cogsys.cs.uni-tuebingen.de/publikationen/2010/kanjanaw2010iav.pdf
+    - Introduction to Trajectory Optimization (hard!) https://www.youtube.com/watch?v=wlkRYMVUZTs
+    - Vector Pursuit http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.645.3260&rep=rep1&type=pdf
 
     Explanation for some equations:
     https://www.sharelatex.com/read/khftjrmkfzqy
@@ -38,11 +51,15 @@ public class PurePursuitTest extends PApplet{
 
     public PurePursuitTest() {
         goals.add(new Vector(0,0));
-        Random random = new Random();
-        for(int i =0; i< 10; i++){
-            Vector vector = new Vector(15-random.nextDouble()*30,15-random.nextDouble()*30);
-            goals.add(vector);
-        }
+        goals.add(new Vector(1,1));
+        goals.add(new Vector(2,7));
+//        goals.add(new Vector(.1,10));
+//        goals.add(new Vector(.2,0));
+//        Random random = new Random();
+//        for(int i =0; i< 10; i++){
+//            Vector vector = new Vector(15-random.nextDouble()*30,15-random.nextDouble()*30);
+//            goals.add(vector);
+//        }
     }
 
     public static void main(String[] args) {
@@ -61,7 +78,7 @@ public class PurePursuitTest extends PApplet{
     public void setup(){
         settings();
         fill(0,0,0);
-        frameRate(5);
+        frameRate(10);
         PurePursuitMovementStrategy movementStrategy = new PurePursuitMovementStrategy(tankRobot, goals,1);
         tankRobot.setMovementStrategy(movementStrategy);
     }
@@ -88,7 +105,8 @@ public class PurePursuitTest extends PApplet{
         float drawX = (float) (10 * tankRobot.getEsimatedLocation().get(0)) + 200;
         float drawY = (float) (10 * tankRobot.getEsimatedLocation().get(1)) + 200;
         Vector lineAddPoint = MathUtils.LinearAlgebra.rotate2D(new Vector(0, 30), tankRobot.getAngle());
-        super.ellipse(drawX, 400-drawY,10,10);
+        // The robot
+        super.ellipse(drawX, 400-drawY, (float) (tankRobot.getLateralWheelDistance()*20),(float) (tankRobot.getLateralWheelDistance()*20));
         super.line(drawX, 400-drawY,(float)(drawX+lineAddPoint.get(0)),400-(float)(drawY+lineAddPoint.get(1)));
         if (movementStrategy instanceof PurePursuitMovementStrategy){
             PurePursuitMovementStrategy purePursuitMovementStrategy = (PurePursuitMovementStrategy) movementStrategy;
@@ -119,6 +137,22 @@ public class PurePursuitTest extends PApplet{
                 noFill();
                 ellipse(getX(intersection.get(0)),getY(intersection.get(1)),5,5);
             }
+
+            double leftRadius = Math.abs(purePursuitMovementStrategy.getR()-tankRobot.getLateralWheelDistance()/2);
+            double rightRadius = Math.abs(purePursuitMovementStrategy.getR()+tankRobot.getLateralWheelDistance()/2);
+
+            double tangentialSpeed = purePursuitMovementStrategy.getTangentialSpeed();
+
+            double centripetalAccelerationLeft = tangentialSpeed*tangentialSpeed/leftRadius;
+            double centripetalAccelerationRight = tangentialSpeed*tangentialSpeed/rightRadius;
+
+            System.out.println("-==========-");
+            System.out.println("R: "+purePursuitMovementStrategy.getR());
+            System.out.println("Left a_c: "+purePursuitMovementStrategy.getLeftWheelTanVel());
+            System.out.println("Right a_c: "+purePursuitMovementStrategy.getRightWheelTanVel());
+            System.out.println("-==========-");
+            System.out.println("");
+            // System.out.println("Mose centripital acceleration left wheels: "+ / largestRadius);
         }
     }
 
